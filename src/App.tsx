@@ -753,9 +753,15 @@ export default function App() {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
+                  maxLength={800}
                   className="bg-transparent border-none focus:outline-none focus:ring-0 w-full font-label-mono text-xs md:text-sm text-white placeholder:text-on-surface-variant/30"
                   placeholder="Type your project needs or ask questions..."
                 />
+                {inputValue.length >= 600 && (
+                  <span className="font-label-mono text-[9px] text-primary/70 select-none px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded mr-1">
+                    {inputValue.length}/800
+                  </span>
+                )}
                 <span className="font-label-mono text-primary cursor-blink text-base hidden md:inline">_</span>
                 <button 
                   id="btn-terminal-send"

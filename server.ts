@@ -288,6 +288,14 @@ async function startServer() {
         return res.status(400).json({ error: "Invalid messages payload" });
       }
 
+      // Guardrail against excessive token usage (e.g. massive paragraphs)
+      const hasTooLongMessage = messages.some(msg => msg.text && msg.text.length > 1000);
+      if (hasTooLongMessage) {
+        return res.json({
+          text: "⚠️ Your message exceeds our security guardrail limit of 1000 characters. Please shorten your response and try again."
+        });
+      }
+
       // Collect geolocation and network details from incoming request headers
       const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "Unknown";
       const clientIp = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : "Unknown";

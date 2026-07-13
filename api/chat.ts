@@ -255,6 +255,14 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Invalid messages payload" });
     }
 
+    // Guardrail against excessive token usage (e.g. massive paragraphs)
+    const hasTooLongMessage = messages.some(msg => msg.text && msg.text.length > 1000);
+    if (hasTooLongMessage) {
+      return res.json({
+        text: "⚠️ Your message exceeds our security guardrail limit of 1000 characters. Please shorten your response and try again."
+      });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     // Collect geolocation and network details from incoming request headers
