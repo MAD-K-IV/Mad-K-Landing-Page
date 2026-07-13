@@ -1,0 +1,6 @@
+{
+  "name": "MAD-K",
+  "description": "High-fidelity AI & Full-Stack developer portfolio featuring services, interactive project showcase, pricing tiers, and a functional live demo assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
