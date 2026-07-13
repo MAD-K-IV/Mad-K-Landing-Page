@@ -398,16 +398,12 @@ export default function App() {
       {/* Dissolved Water Logo Background */}
       <div id="background-water-container" className="background-water-container">
         <div className="background-water-float-wrapper">
-          <div className="background-water-logo-container">
-            <img 
-              src="/logo.png" 
-              className="background-water-logo-base" 
-              alt="MAD-K Background Logo Base" 
-              referrerPolicy="no-referrer"
-            />
-            <div className="background-water-logo-metallic"></div>
-            <div className="background-water-logo-shine"></div>
-          </div>
+          <img 
+            src="/logo.png" 
+            className="background-water-logo" 
+            alt="MAD-K Background Logo" 
+            referrerPolicy="no-referrer"
+          />
         </div>
       </div>
 
