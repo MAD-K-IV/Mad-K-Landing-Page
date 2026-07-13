@@ -4,7 +4,6 @@ import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import fs from "fs/promises";
 import nodemailer from "nodemailer";
 
 dotenv.config();
@@ -12,22 +11,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper to save leads to a JSON file
-async function saveLead(lead: any) {
-  const filePath = path.join(process.cwd(), "leads.json");
-  let leads = [];
-  try {
-    const data = await fs.readFile(filePath, "utf-8");
-    leads = JSON.parse(data);
-  } catch (error) {
-    // File doesn't exist or is invalid JSON, start with empty list
-  }
-  leads.push({
-    ...lead,
-    timestamp: new Date().toISOString()
-  });
-  await fs.writeFile(filePath, JSON.stringify(leads, null, 2), "utf-8");
-}
+
 
 // Helper to auto-email lead details to MAD-K via Nodemailer
 async function sendLeadEmail(lead: any) {
@@ -216,9 +200,6 @@ async function startServer() {
           leadCaptured = true;
           leadDetails = args;
           
-           // Save lead to local disk
-          await saveLead(args);
-
           // Auto-email lead details to MAD-K
           await sendLeadEmail(args);
 

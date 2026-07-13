@@ -1,35 +1,6 @@
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 import nodemailer from "nodemailer";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-// Initialize Firebase Admin SDK securely for external hosting (Vercel)
-if (getApps().length === 0) {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    try {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      initializeApp({
-        credential: cert(serviceAccount)
-      });
-    } catch (e) {
-      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e);
-      initializeApp();
-    }
-  } else {
-    initializeApp();
-  }
-}
-
-const db = getFirestore();
-
-// Helper to save leads to Firestore database
-async function saveLead(lead: any) {
-  await db.collection("leads").add({
-    ...lead,
-    timestamp: new Date().toISOString()
-  });
-}
 
 // Helper to auto-email lead details to MAD-K via Nodemailer
 async function sendLeadEmail(lead: any) {
@@ -205,9 +176,6 @@ app.post("/api/chat", async (req, res) => {
         leadCaptured = true;
         leadDetails = args;
         
-        // Save lead to Firestore database
-        await saveLead(args);
-
         // Auto-email lead details to MAD-K
         await sendLeadEmail(args);
 
