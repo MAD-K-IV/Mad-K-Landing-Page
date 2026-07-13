@@ -104,6 +104,129 @@ Guidelines for Your Tone & Style:
 - Lead Capture Protocol:
   Whenever a user expresses interest in booking a tier, raising an enquiry, collaborating with MAD-K, OR simply describes their project requirements, you MUST immediately invoke the 'submit_lead' function. Do NOT wait for contact details (like name/email) to register the lead — register it as soon as their project requirements are clear! If they do offer contact details, capture them too. Warn them nicely that you are registering their enquiry details.`;
 
+// Local static chatbot fallback gateway
+async function runStaticFallback(messages: any[], metadataPayload: any) {
+  let email = "";
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
+  
+  let phone = "";
+  const phoneRegex = /\b\+?[0-9]{7,15}\b/;
+
+  let name = "";
+
+  const userMessages = messages.filter(m => m.sender === 'user');
+  
+  for (const m of userMessages) {
+    const text = m.text || "";
+    
+    // Check for email
+    const emailMatch = text.match(emailRegex);
+    if (emailMatch) {
+      email = emailMatch[0];
+    }
+    
+    // Check for phone
+    const phoneMatch = text.match(phoneRegex);
+    if (phoneMatch) {
+      phone = phoneMatch[0];
+    }
+
+    // Try to extract name
+    const nameMatch = text.match(/my name is\s+([A-Za-z\s]{2,30})/i) || 
+                      text.match(/i am\s+([A-Za-z\s]{2,30})/i) ||
+                      text.match(/name:\s*([A-Za-z\s]{2,30})/i);
+    if (nameMatch) {
+      name = nameMatch[1].trim();
+    }
+  }
+
+  if (!name && email) {
+    const prefix = email.split('@')[0];
+    name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+  }
+
+  // To find the project description:
+  const descParts: string[] = [];
+  for (const m of userMessages) {
+    const text = m.text || "";
+    const cleaned = text.trim();
+    
+    if (cleaned.toLowerCase().startsWith("my name is") || 
+        cleaned.toLowerCase().startsWith("i am") || 
+        emailRegex.test(cleaned) ||
+        cleaned.length < 8) {
+      continue;
+    }
+    
+    descParts.push(cleaned);
+  }
+  
+  let project_description = descParts.join(" ");
+
+  if (!project_description && userMessages.length > 0) {
+    project_description = userMessages[userMessages.length - 1].text || "";
+  }
+
+  const latestMessage = userMessages[userMessages.length - 1]?.text || "";
+  const query = latestMessage.toLowerCase();
+
+  // If we have requirements and email, trigger the lead!
+  if (project_description && email) {
+    if (!name) name = "Anonymous Visitor";
+    const leadDetails = { name, email, phone, project_description };
+    await sendLeadEmail(leadDetails, metadataPayload);
+    return {
+      text: `Thank you! Your requirements have been successfully registered and emailed to the MAD-K team. We will reach out to you at **${email}** soon! 🚀`,
+      leadCaptured: true,
+      leadDetails
+    };
+  }
+
+  // If we have requirements, but no email:
+  if (project_description && project_description.length > 15) {
+    return {
+      text: "Got it! I've noted down your project requirements. To submit this enquiry directly to the MAD-K team, please provide your **Name** and **Email Address**.",
+      leadCaptured: false,
+      leadDetails: null
+    };
+  }
+
+  // Keyword Matching responses
+  let replyText = "";
+  if (query.includes("price") || query.includes("pricing") || query.includes("cost") || query.includes("tier") || query.includes("rate") || query.includes("how much") || query.includes("package")) {
+    replyText = `We offer four structured service tiers:
+- **Basic Portfolio** (₹6k - ₹15k/week): Static responsive website with inquiry forms.
+- **Advanced Portfolio** (₹20k - ₹45k/week): AI chatbot integration, lead mailer automation, review fetchers, and feedback highlights. (API keys excluded).
+- **Dedicated Automation** (Starts from ₹50k): Custom Python scrapers, workflow automations, and onsite setup.
+- **Detection Systems** (Starts from ₹50k): CCTV security & computer vision analytics with public feed integrations.
+
+Describe what you'd like to build here, and we can register your enquiry!`;
+  } else if (query.includes("about") || query.includes("mad-k") || query.includes("who are you") || query.includes("experience") || query.includes("team")) {
+    replyText = `MAD-K is a high-performance specialist team focused on building AI chatbots, Retrieval-Augmented Generation (RAG) search engines, custom web applications, and Python task automation workflows. 
+
+Tell me what you are looking to build, and I will capture your project requirements!`;
+  } else if (query.includes("contact") || query.includes("email") || query.includes("reach") || query.includes("phone") || query.includes("whatsapp") || query.includes("linkedin")) {
+    replyText = `You can reach the MAD-K team directly through:
+- **Email**: madkinfo@gmail.com
+- **WhatsApp**: +91 96558 41515
+- **LinkedIn**: linkedin.com/in/kamatchi-somesh
+
+Otherwise, describe your project requirements here, and we'll automatically mail them to the team!`;
+  } else {
+    replyText = `Hello! I am the MAD-K team's assistant. 
+
+We build AI RAG chatbots, custom Python automation systems, React/Full-Stack web applications, and computer vision models.
+
+What kind of website or automation project are you looking to build? Describe it here and I'll route it to the team!`;
+  }
+
+  return {
+    text: replyText,
+    leadCaptured: false,
+    leadDetails: null
+  };
+}
+
 const app = express();
 app.use(express.json());
 
@@ -116,20 +239,6 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.json({
-        text: "Hello! It looks like the GEMINI_API_KEY is missing on this environment. However, as MAD-K's team assistant, I can tell you that we specialize in custom RAG Chatbots, Python automation scripts, and React/Full-Stack web applications! Feel free to explore the service tiers or projects below."
-      });
-    }
-
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
-    });
 
     // Collect geolocation and network details from incoming request headers
     const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "Unknown";
@@ -150,6 +259,21 @@ app.post("/api/chat", async (req, res) => {
       referrer: clientMetadata?.referrer || "Unknown",
       signature: clientMetadata?.canvasFingerprint || "Unknown"
     };
+
+    if (!apiKey) {
+      console.warn("Gemini API key missing. Falling back to static mode.");
+      const fallbackRes = await runStaticFallback(messages, metadataPayload);
+      return res.json(fallbackRes);
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
 
     const submitLeadFunctionDeclaration = {
       name: "submit_lead",
@@ -240,8 +364,32 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({ text: response.text, leadCaptured, leadDetails });
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    res.status(500).json({ error: "Failed to generate AI response: " + error.message });
+    console.error("Gemini API Error, falling back to static mode:", error.message);
+    try {
+      const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "Unknown";
+      const clientIp = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : "Unknown";
+      const country = req.headers['x-vercel-ip-country'] || "Unknown";
+      const region = req.headers['x-vercel-ip-country-region'] || "Unknown";
+      const city = req.headers['x-vercel-ip-city'] || "Unknown";
+      const location = country !== "Unknown" ? `${city}, ${region}, ${country}` : "Local/Unknown";
+
+      const metadataPayload = {
+        ip: clientIp,
+        location: location,
+        browser: req.body.clientMetadata?.userAgent || req.headers['user-agent'] || "Unknown",
+        resolution: req.body.clientMetadata?.screenResolution || "Unknown",
+        timezone: req.body.clientMetadata?.timezone || "Unknown",
+        language: req.body.clientMetadata?.language || "Unknown",
+        referrer: req.body.clientMetadata?.referrer || "Unknown",
+        signature: req.body.clientMetadata?.canvasFingerprint || "Unknown"
+      };
+      
+      const fallbackRes = await runStaticFallback(req.body.messages || [], metadataPayload);
+      res.json(fallbackRes);
+    } catch (innerError: any) {
+      console.error("Critical double failure in static fallback mode:", innerError.message);
+      res.status(500).json({ error: "Failed to generate AI response or run fallback: " + innerError.message });
+    }
   }
 });
 
