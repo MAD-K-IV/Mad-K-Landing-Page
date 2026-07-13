@@ -568,16 +568,16 @@ export default function App() {
             {/* Chat Body */}
             <div 
               id="chat-messages" 
-              className="h-[460px] overflow-y-auto p-6 flex flex-col gap-6 bg-surface-container-lowest/40"
+              className="h-[420px] overflow-y-auto p-4 flex flex-col gap-3.5 bg-surface-container-lowest/40"
             >
               {messages.map((msg, index) => (
                 <div 
                   key={index}
                   id={`chat-msg-${index}`}
-                  className={`flex flex-col gap-2 max-w-[85%] ${msg.sender === 'user' ? 'self-end' : 'self-start'}`}
+                  className={`flex flex-col gap-1 max-w-[85%] ${msg.sender === 'user' ? 'self-end' : 'self-start'}`}
                 >
                   <div 
-                    className={`p-4 rounded-xl text-sm md:text-base leading-relaxed ${
+                    className={`py-2 px-3.5 rounded-xl text-xs md:text-sm leading-relaxed ${
                       msg.sender === 'user' 
                         ? 'bg-primary/10 border border-primary/20 rounded-tr-none text-white' 
                         : 'glass rounded-tl-none border-primary/10 text-on-surface'
@@ -592,17 +592,17 @@ export default function App() {
                         </div>
                         
                         {msg.leadCaptured && msg.leadDetails && (
-                          <div className="mt-4 p-4 rounded-lg bg-black/50 border border-primary/20 flex flex-col gap-3">
-                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                              <span className="text-xs font-bold font-label-mono text-primary flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <div className="mt-2.5 p-3 rounded-lg bg-black/50 border border-primary/20 flex flex-col gap-2">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                              <span className="text-[10px] font-bold font-label-mono text-primary flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 LEAD DETAILS REGISTERED
                               </span>
-                              <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded uppercase font-label-mono">
+                              <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-label-mono">
                                 Saved to Server
                               </span>
                             </div>
-                            <div className="text-xs space-y-1 text-on-surface-variant font-sans">
+                            <div className="text-[11px] space-y-0.5 text-on-surface-variant font-sans">
                               <p><strong className="text-white">Name:</strong> {msg.leadDetails.name}</p>
                               <p><strong className="text-white">Email:</strong> {msg.leadDetails.email}</p>
                               {msg.leadDetails.phone && <p><strong className="text-white">Phone:</strong> {msg.leadDetails.phone}</p>}
@@ -625,13 +625,13 @@ export default function App() {
               ))}
 
               {isTyping && (
-                <div id="assistant-typing" className="flex flex-col gap-2 max-w-[85%] self-start">
-                  <div className="glass p-4 rounded-xl rounded-tl-none border-primary/10 text-on-surface flex items-center gap-1">
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                <div id="assistant-typing" className="flex flex-col gap-1 max-w-[85%] self-start">
+                  <div className="glass py-2 px-3 rounded-xl rounded-tl-none border-primary/10 text-on-surface flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                   </div>
-                  <span className="font-label-mono text-[10px] text-on-surface-variant/50 ml-1">
+                  <span className="font-label-mono text-[9px] text-on-surface-variant/50 ml-1">
                     MAD-K Partner is thinking...
                   </span>
                 </div>
@@ -641,19 +641,19 @@ export default function App() {
             </div>
 
             {/* Chat Input */}
-            <form onSubmit={handleSubmit} id="chat-form" className="p-4 md:p-6 bg-surface-container-low border-t border-white/5">
-              <div className="flex gap-4 items-center bg-black/40 p-3.5 md:p-4 rounded-lg border border-white/10 group focus-within:border-primary/50 transition-colors">
-                <span className="font-label-mono text-primary font-bold text-lg">&gt;</span>
+            <form onSubmit={handleSubmit} id="chat-form" className="p-3 md:p-4 bg-surface-container-low border-t border-white/5">
+              <div className="flex gap-3 items-center bg-black/40 p-2.5 md:p-3 rounded-lg border border-white/10 group focus-within:border-primary/50 transition-colors">
+                <span className="font-label-mono text-primary font-bold text-base">&gt;</span>
                 <input 
                   id="terminal-input"
                   ref={chatInputRef}
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="bg-transparent border-none focus:outline-none focus:ring-0 w-full font-label-mono text-sm md:text-base text-white placeholder:text-on-surface-variant/30"
+                  className="bg-transparent border-none focus:outline-none focus:ring-0 w-full font-label-mono text-xs md:text-sm text-white placeholder:text-on-surface-variant/30"
                   placeholder="Type your project needs or ask questions..."
                 />
-                <span className="font-label-mono text-primary cursor-blink text-lg hidden md:inline">_</span>
+                <span className="font-label-mono text-primary cursor-blink text-base hidden md:inline">_</span>
                 <button 
                   id="btn-terminal-send"
                   type="submit"
