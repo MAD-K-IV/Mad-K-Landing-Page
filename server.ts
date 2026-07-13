@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 
 // Helper to auto-email lead details to MAD-K via Nodemailer
-async function sendLeadEmail(lead: any, metadata: any = {}) {
+async function sendLeadEmail(lead: any, metadata: any = {}, convoHistory: any[] = []) {
   const smtpEmail = process.env.SMTP_EMAIL;
   const smtpPassword = process.env.SMTP_PASSWORD;
 
@@ -34,6 +34,26 @@ async function sendLeadEmail(lead: any, metadata: any = {}) {
 
     const leadName = lead.name || "Anonymous Visitor";
 
+    let convoHtml = "";
+    if (convoHistory && convoHistory.length > 0) {
+      convoHtml = `
+        <h3 style="color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-top: 24px;">💬 Chat History</h3>
+        <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 8px; font-size: 13px; max-height: 300px; overflow-y: auto;">
+      `;
+      for (const msg of convoHistory) {
+        const isUser = msg.sender === 'user';
+        const color = isUser ? '#a78bfa' : '#60a5fa';
+        const label = isUser ? 'User' : 'Assistant';
+        convoHtml += `
+          <div style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 8px;">
+            <strong style="color: ${color}; font-size: 11px; text-transform: uppercase;">${label}</strong>
+            <p style="margin: 4px 0 0; color: #e0e0e0; line-height: 1.5; font-family: sans-serif; white-space: pre-wrap;">${msg.text}</p>
+          </div>
+        `;
+      }
+      convoHtml += `</div>`;
+    }
+
     await transporter.sendMail({
       from: `"MAD-K Lead Bot" <${smtpEmail}>`,
       to: "madkinfo@gmail.com",
@@ -45,7 +65,7 @@ async function sendLeadEmail(lead: any, metadata: any = {}) {
             <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">Via MAD-K AI Assistant</p>
           </div>
           <div style="padding: 24px 32px;">
-            <h3 style="margin-top: 0; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); pb: 8px;">Contact / Enquiry Details</h3>
+            <h3 style="margin-top: 0; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">Contact / Enquiry Details</h3>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
               <tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600; width: 120px;">Name</td><td style="padding: 6px 0; color: #ffffff;">${lead.name || '<span style="color:#666; font-style:italic;">Not Provided</span>'}</td></tr>
               <tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600;">Email</td><td style="padding: 6px 0;">${lead.email ? `<a href="mailto:${lead.email}" style="color: #60a5fa;">${lead.email}</a>` : '<span style="color:#666; font-style:italic;">Not Provided</span>'}</td></tr>
@@ -58,7 +78,9 @@ async function sendLeadEmail(lead: any, metadata: any = {}) {
               <p style="margin: 0; line-height: 1.6; color: #ffffff; font-size: 14px;">${lead.project_description}</p>
             </div>
 
-            <h3 style="color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); pb: 8px; margin-top: 24px;">Visitor Metadata & Diagnostics</h3>
+            ${convoHtml}
+
+            <h3 style="color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-top: 24px;">Visitor Metadata & Diagnostics</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5;">
               <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600; width: 140px;">IP Address</td><td style="padding: 5px 0; font-family: monospace;">${metadata.ip || 'Unknown'}</td></tr>
               <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Approx. Location</td><td style="padding: 5px 0;">${metadata.location || 'Unknown'}</td></tr>
@@ -127,87 +149,31 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
 
   const userMessages = messages.filter(m => m.sender === 'user');
 
-  // Try delimiter-based splitting first on any user message
-  const delimiters = [/\|/, /--/, /\/\//, /,/];
-  
+  // strictly parse using pipe '|' separator
   for (const m of userMessages) {
     const text = m.text || "";
-    for (const delim of delimiters) {
-      const split = text.split(delim);
-      if (split.length >= 2) {
-        const parts = split.map(p => p.trim());
-        let tempName = "";
-        let tempPhone = "";
-        let tempEmail = "";
-        
-        for (const part of parts) {
-          if (emailRegex.test(part)) {
-            const match = part.match(emailRegex);
-            if (match) tempEmail = match[0];
-          } else if (phoneRegex.test(part)) {
-            const match = part.match(phoneRegex);
-            if (match) tempPhone = match[0];
-          } else {
-            if (part && part.length < 40 && !tempName) {
-              tempName = part;
-            }
-          }
-        }
-        
-        if (tempEmail) {
-          email = tempEmail;
-          if (tempName) name = tempName;
-          if (tempPhone) phone = tempPhone;
-          break;
-        }
-      }
-    }
-    if (email) break;
-  }
-
-  // If no structured match found, fallback to regex scanning across all messages
-  if (!email) {
-    for (const m of userMessages) {
-      const text = m.text || "";
-      const emailMatch = text.match(emailRegex);
-      if (emailMatch) email = emailMatch[0];
-
-      const phoneMatch = text.match(phoneRegex);
-      if (phoneMatch) phone = phoneMatch[0];
-
-      const nameMatch = text.match(/my name is\s+([A-Za-z\s]{2,30})/i) || 
-                        text.match(/i am\s+([A-Za-z\s]{2,30})/i) ||
-                        text.match(/name:\s*([A-Za-z\s]{2,30})/i);
-      if (nameMatch) {
-        name = nameMatch[1].trim();
+    if (text.includes('|')) {
+      const split = text.split('|').map(p => p.trim());
+      if (split.length >= 3) {
+        name = split[0];
+        phone = split[1];
+        email = split[2];
+        break;
+      } else if (split.length === 2) {
+        name = split[0];
+        email = split[1];
+        break;
       }
     }
   }
 
-  if (!name && email) {
-    const prefix = email.split('@')[0];
-    name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-  }
-
-  // Extract project description (ignoring split messages containing emails)
+  // To find the project description:
   const descParts: string[] = [];
   for (const m of userMessages) {
     const text = m.text || "";
     const cleaned = text.trim();
     
-    let isSplitMsg = false;
-    for (const delim of delimiters) {
-      if (cleaned.split(delim).length >= 2 && emailRegex.test(cleaned)) {
-        isSplitMsg = true;
-        break;
-      }
-    }
-    
-    if (cleaned.toLowerCase().startsWith("my name is") || 
-        cleaned.toLowerCase().startsWith("i am") || 
-        emailRegex.test(cleaned) ||
-        isSplitMsg ||
-        cleaned.length < 8) {
+    if (cleaned.includes('|') || cleaned.length < 8) {
       continue;
     }
     
@@ -217,17 +183,7 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
   let project_description = descParts.join(" ");
 
   if (!project_description && userMessages.length > 0) {
-    const nonSplitMsgs = userMessages.filter(m => {
-      const text = m.text || "";
-      let isSplit = false;
-      for (const delim of delimiters) {
-        if (text.split(delim).length >= 2 && emailRegex.test(text)) {
-          isSplit = true;
-          break;
-        }
-      }
-      return !isSplit;
-    });
+    const nonSplitMsgs = userMessages.filter(m => !(m.text || "").includes('|'));
     if (nonSplitMsgs.length > 0) {
       project_description = nonSplitMsgs[nonSplitMsgs.length - 1].text || "";
     } else {
@@ -239,10 +195,10 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
   const query = latestMessage.toLowerCase();
 
   // If we have requirements and email, trigger the lead!
-  if (project_description && email) {
+  if (project_description && email && emailRegex.test(email)) {
     if (!name) name = "Anonymous Visitor";
     const leadDetails = { name, email, phone, project_description };
-    await sendLeadEmail(leadDetails, metadataPayload);
+    await sendLeadEmail(leadDetails, metadataPayload, messages);
     return {
       text: `Thank you! Your requirements have been successfully registered and emailed to the MAD-K team. We will reach out to you at **${email}** (Phone: ${phone || 'Not Provided'}) soon! 🚀`,
       leadCaptured: true,
@@ -255,13 +211,9 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
     return {
       text: `Got it! I've noted down your project requirements.
       
-To submit this enquiry directly to the MAD-K team, please provide your **Name**, **Mobile Number**, and **Email Address**. 
+To submit this enquiry directly to the MAD-K team, please provide your **Name**, **Mobile Number**, and **Email Address** in this exact format:
 
-You can type them in any of these templates:
-*   \`Name | Mobile | Email\`
-*   \`Name, Mobile, Email\`
-*   \`Name -- Mobile -- Email\`
-*   \`Name // Mobile // Email\`
+**Name | Mobile | Email**
 
 *For example: Somesh | 9655841515 | kamatchi187@gmail.com*`,
       leadCaptured: false,
@@ -425,7 +377,7 @@ async function startServer() {
           leadDetails = args;
           
           // Auto-email lead details to MAD-K along with diagnostic metadata
-          await sendLeadEmail(args, metadataPayload);
+          await sendLeadEmail(args, metadataPayload, messages);
 
           const previousContent = response.candidates?.[0]?.content;
           const functionResponsePart = {

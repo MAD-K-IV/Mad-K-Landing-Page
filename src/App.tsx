@@ -15,7 +15,9 @@ import {
   Linkedin, 
   ShieldAlert,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Phone,
+  User
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -181,6 +183,7 @@ interface Message {
   text: string;
   time: string;
   leadCaptured?: boolean;
+  promptLeadInput?: boolean;
   leadDetails?: {
     name: string;
     email: string;
@@ -209,6 +212,13 @@ export default function App() {
   const [enquiryTier, setEnquiryTier] = useState<{name: string, price: string} | null>(null);
   const [enquiryRequirements, setEnquiryRequirements] = useState("");
   const [copiedNotification, setCopiedNotification] = useState(false);
+
+  // Lead modal state
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadMobile, setLeadMobile] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadError, setLeadError] = useState("");
 
 
 
@@ -351,6 +361,7 @@ export default function App() {
           text: data.text || "We apologize, but we received an empty response. Can you please rephrase?",
           time: assistantTime,
           leadCaptured: data.leadCaptured,
+          promptLeadInput: data.promptLeadInput,
           leadDetails: data.leadDetails
         }
       ]);
@@ -376,6 +387,38 @@ export default function App() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleSendMessage(inputValue);
+  };
+
+  const handleLeadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLeadError("");
+
+    if (!leadName.trim()) {
+      setLeadError("Name is required.");
+      return;
+    }
+
+    const phoneCleaned = leadMobile.trim();
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    if (!phoneRegex.test(phoneCleaned)) {
+      setLeadError("Please enter a valid mobile number (10 to 15 digits).");
+      return;
+    }
+
+    const emailCleaned = leadEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailCleaned)) {
+      setLeadError("Please enter a valid email address.");
+      return;
+    }
+
+    const formatted = `${leadName.trim()} | ${phoneCleaned} | ${emailCleaned}`;
+    handleSendMessage(formatted);
+
+    setLeadModalOpen(false);
+    setLeadName("");
+    setLeadMobile("");
+    setLeadEmail("");
   };
 
   const handleOpenEnquiryModal = (tierName: string, price: string) => {
@@ -639,6 +682,17 @@ export default function App() {
                         <div className="markdown-body">
                           <Markdown>{msg.text}</Markdown>
                         </div>
+                        
+                        {(msg.promptLeadInput || (msg.text && msg.text.includes("Name | Mobile | Email"))) && !messages.some(m => m.leadCaptured) && (
+                          <button
+                            id="btn-open-lead-modal"
+                            onClick={() => setLeadModalOpen(true)}
+                            className="mt-1 py-1.5 px-3 bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 text-white font-semibold text-xs rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 self-start shadow-sm"
+                          >
+                            <Mail size={13} className="text-primary" />
+                            Submit Contact Details
+                          </button>
+                        )}
                         
                         {msg.leadCaptured && msg.leadDetails && (
                           <div className="mt-2.5 p-3 rounded-lg bg-black/50 border border-primary/20 flex flex-col gap-2">
@@ -1245,6 +1299,117 @@ export default function App() {
               <div className="bg-[#2a2a2a]/40 px-6 py-4 border-t border-white/5 text-[11px] text-on-surface-variant/50 font-label-mono leading-relaxed">
                 * Your selected channel will open directly so you can send the enquiry from your own account.
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lead Contact Info Modal */}
+      <AnimatePresence>
+        {leadModalOpen && (
+          <div id="lead-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              id="lead-modal-content"
+              className="glass max-w-md w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#1c1b1b]"
+            >
+              {/* Modal Header */}
+              <div className="bg-[#2a2a2a] px-6 py-4 flex items-center justify-between border-b border-white/10">
+                <div className="flex flex-col">
+                  <span className="font-label-mono text-[10px] text-primary tracking-wider uppercase">
+                    Submit Lead
+                  </span>
+                  <h3 className="font-display text-lg font-bold text-white">
+                    Contact Information
+                  </h3>
+                </div>
+                <button
+                  id="btn-close-lead-modal"
+                  onClick={() => setLeadModalOpen(false)}
+                  className="p-1.5 text-on-surface-variant hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <form onSubmit={handleLeadSubmit} className="p-6 flex flex-col gap-4">
+                {leadError && (
+                  <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-sans">
+                    ⚠️ {leadError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="lead-name" className="font-sans text-xs font-semibold text-white/70">
+                    Full Name
+                  </label>
+                  <div className="relative flex items-center">
+                    <User size={14} className="absolute left-3 text-on-surface-variant/40" />
+                    <input
+                      id="lead-name"
+                      type="text"
+                      value={leadName}
+                      onChange={(e) => setLeadName(e.target.value)}
+                      placeholder="Somesh"
+                      className="w-full bg-black/40 pl-9 pr-3 py-2 rounded-lg border border-white/10 font-sans text-sm text-white placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="lead-mobile" className="font-sans text-xs font-semibold text-white/70">
+                    Mobile Number
+                  </label>
+                  <div className="relative flex items-center">
+                    <Phone size={14} className="absolute left-3 text-on-surface-variant/40" />
+                    <input
+                      id="lead-mobile"
+                      type="tel"
+                      value={leadMobile}
+                      onChange={(e) => setLeadMobile(e.target.value)}
+                      placeholder="9655841515"
+                      className="w-full bg-black/40 pl-9 pr-3 py-2 rounded-lg border border-white/10 font-sans text-sm text-white placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="lead-email" className="font-sans text-xs font-semibold text-white/70">
+                    Email Address
+                  </label>
+                  <div className="relative flex items-center">
+                    <Mail size={14} className="absolute left-3 text-on-surface-variant/40" />
+                    <input
+                      id="lead-email"
+                      type="email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      placeholder="kamatchi187@gmail.com"
+                      className="w-full bg-black/40 pl-9 pr-3 py-2 rounded-lg border border-white/10 font-sans text-sm text-white placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setLeadModalOpen(false)}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold text-white transition-all cursor-pointer active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-primary text-on-primary font-semibold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-sm shadow-primary/20"
+                  >
+                    Register Enquiry
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
