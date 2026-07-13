@@ -1,5 +1,6 @@
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
+import nodemailer from "nodemailer";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -28,6 +29,60 @@ async function saveLead(lead: any) {
     ...lead,
     timestamp: new Date().toISOString()
   });
+}
+
+// Helper to auto-email lead details to MAD-K via Nodemailer
+async function sendLeadEmail(lead: any) {
+  const smtpEmail = process.env.SMTP_EMAIL;
+  const smtpPassword = process.env.SMTP_PASSWORD;
+
+  if (!smtpEmail || !smtpPassword) {
+    console.warn("SMTP_EMAIL or SMTP_PASSWORD not set. Skipping lead email notification.");
+    return;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: smtpEmail,
+        pass: smtpPassword,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"MAD-K Lead Bot" <${smtpEmail}>`,
+      to: "madkinfo@gmail.com",
+      subject: `🔥 New Lead Captured: ${lead.name}`,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px 32px;">
+            <h1 style="margin: 0; font-size: 22px; color: #ffffff;">🚀 New Lead Captured</h1>
+            <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">Via MAD-K AI Assistant</p>
+          </div>
+          <div style="padding: 24px 32px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600; width: 120px;">Name</td><td style="padding: 8px 0;">${lead.name}</td></tr>
+              <tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Email</td><td style="padding: 8px 0;"><a href="mailto:${lead.email}" style="color: #60a5fa;">${lead.email}</a></td></tr>
+              ${lead.phone ? `<tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Phone</td><td style="padding: 8px 0;">${lead.phone}</td></tr>` : ''}
+              ${lead.company ? `<tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Company</td><td style="padding: 8px 0;">${lead.company}</td></tr>` : ''}
+            </table>
+            <div style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #a78bfa;">
+              <p style="margin: 0 0 6px; font-size: 12px; color: #a78bfa; font-weight: 600; text-transform: uppercase;">Project Description</p>
+              <p style="margin: 0; line-height: 1.6;">${lead.project_description}</p>
+            </div>
+          </div>
+          <div style="padding: 16px 32px; background: rgba(0,0,0,0.3); font-size: 11px; color: #666;">
+            Captured at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST • MAD-K Portfolio
+          </div>
+        </div>
+      `,
+    });
+
+    console.log(`✅ Lead email sent successfully for: ${lead.name} (${lead.email})`);
+  } catch (error: any) {
+    console.error("❌ Failed to send lead email:", error.message);
+  }
 }
 
 const SYSTEM_INSTRUCTION = `You are MAD-K's advanced portfolio assistant (MAD-K Partner).
@@ -61,7 +116,7 @@ Guidelines for Your Tone & Style:
 - Note that you can help estimate project budgets! For example, if they describe what they want to build, give a high-level technical recommendation and tell them which tier (or custom pricing) fits best.
 - Lead Capture Protocol:
   Whenever a user expresses interest in booking a tier, raising an enquiry, or collaborating with MAD-K, make sure to ask for their name, email (mandatory), and a description of their requirements.
-  Once they share these details, you MUST immediately invoke the 'submit_lead' function to register and forward their lead to kamatchi825@gmail.com. Warn them nicely that you are saving and sending their lead details to MAD-K.`;
+  Once they share these details, you MUST immediately invoke the 'submit_lead' function to register and forward their lead to madkinfo@gmail.com. Warn them nicely that you are saving and sending their lead details to MAD-K.`;
 
 const app = express();
 app.use(express.json());
@@ -153,11 +208,14 @@ app.post("/api/chat", async (req, res) => {
         // Save lead to Firestore database
         await saveLead(args);
 
+        // Auto-email lead details to MAD-K
+        await sendLeadEmail(args);
+
         const previousContent = response.candidates?.[0]?.content;
         const functionResponsePart = {
           functionResponse: {
             name: "submit_lead",
-            response: { status: "success", message: "Enquiry successfully registered and forwarded to MAD-K (kamatchi825@gmail.com)." }
+            response: { status: "success", message: "Enquiry successfully registered and forwarded to MAD-K (madkinfo@gmail.com)." }
           }
         };
 

@@ -315,7 +315,7 @@ export default function App() {
         ...prev,
         {
           sender: 'assistant',
-          text: `[System Warning] Connection to MAD-K core lost: ${error.message}. Please verify server logs or try again.`,
+          text: "We're currently facing issues with our assistant. We'll be back soon — please try again in a moment! 🚧",
           time: assistantTime
         }
       ]);
@@ -342,46 +342,33 @@ export default function App() {
     const { name: tierName, price } = enquiryTier;
     const requirementsText = enquiryRequirements.trim() || "No specific requirements specified.";
 
-    // First, close modal
+    // Close modal
     setEnquiryModalOpen(false);
 
-    // Now open/process the chosen channel
+    // Open the chosen external channel directly — no chatbot message
     if (channel === 'email') {
-      const emailRecipient = "kamatchi825@gmail.com";
+      const emailRecipient = "madkinfo@gmail.com";
       const emailSubject = encodeURIComponent(`MAD-K Enquiry: ${tierName} Tier`);
       const emailBody = encodeURIComponent(
         `Hello MAD-K,\n\nI would like to raise an enquiry for the "${tierName}" service tier (${price}).\n\nRequirements:\n${requirementsText}\n\nLooking forward to your response!\n`
       );
-      window.location.href = `mailto:${emailRecipient}?subject=${emailSubject}&body=${emailBody}`;
-    } else {
-      // Construct the formatted message to send to the terminal chat assistant
-      const chatMessage = `Hello MAD-K!\nI would like to raise an enquiry for the "${tierName}" tier (${price}).\n\nMy Requirements:\n${requirementsText}`;
-
-      // Smooth scroll to chat box
-      const chatElement = document.getElementById("chat");
-      if (chatElement) {
-        chatElement.scrollIntoView({ behavior: "smooth" });
+      const mailtoLink = `mailto:${emailRecipient}?subject=${emailSubject}&body=${emailBody}`;
+      const mailWindow = window.open(mailtoLink, '_blank');
+      // Fallback: if popup was blocked, try location.href
+      if (!mailWindow) {
+        window.location.href = mailtoLink;
       }
-
-      // Next, submit to our internal chatbot so they see it in high-fidelity
-      handleSendMessage(chatMessage);
-
-      if (channel === 'whatsapp') {
-        const waText = encodeURIComponent(
-          `Hello MAD-K! I am interested in the "${tierName}" tier (${price}).\n\nRequirements:\n${requirementsText}`
-        );
-        setTimeout(() => {
-          window.open(`https://api.whatsapp.com/send?phone=${PORTFOLIO_WHATSAPP_NUMBER}&text=${waText}`, '_blank');
-        }, 400);
-      } else if (channel === 'linkedin') {
-        const linkedInText = `Hello MAD-K! I am interested in the "${tierName}" tier (${price}).\n\nRequirements:\n${requirementsText}`;
-        navigator.clipboard.writeText(linkedInText);
-        setCopiedNotification(true);
-        setTimeout(() => setCopiedNotification(false), 4000);
-        setTimeout(() => {
-          window.open("https://linkedin.com/in/somesh-s-dev", '_blank');
-        }, 400);
-      }
+    } else if (channel === 'whatsapp') {
+      const waText = encodeURIComponent(
+        `Hello MAD-K! I am interested in the "${tierName}" tier (${price}).\n\nRequirements:\n${requirementsText}`
+      );
+      window.open(`https://api.whatsapp.com/send?phone=${PORTFOLIO_WHATSAPP_NUMBER}&text=${waText}`, '_blank');
+    } else if (channel === 'linkedin') {
+      const linkedInText = `Hello MAD-K! I am interested in the "${tierName}" tier (${price}).\n\nRequirements:\n${requirementsText}`;
+      navigator.clipboard.writeText(linkedInText);
+      setCopiedNotification(true);
+      setTimeout(() => setCopiedNotification(false), 4000);
+      window.open("https://linkedin.com/in/somesh-s-dev", '_blank');
     }
   };
 
@@ -621,31 +608,6 @@ export default function App() {
                               {msg.leadDetails.phone && <p><strong className="text-white">Phone:</strong> {msg.leadDetails.phone}</p>}
                               {msg.leadDetails.company && <p><strong className="text-white">Company:</strong> {msg.leadDetails.company}</p>}
                               <p className="mt-2 border-t border-white/5 pt-1.5"><strong className="text-white">Description:</strong> {msg.leadDetails.project_description}</p>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                              <button
-                                onClick={() => {
-                                  const subject = encodeURIComponent(`MAD-K Lead Enquiry: ${msg.leadDetails!.name}`);
-                                  const body = encodeURIComponent(
-                                    `Hello MAD-K,\n\nI want to raise an enquiry.\n\nLead Details:\nName: ${msg.leadDetails!.name}\nEmail: ${msg.leadDetails!.email}\nPhone: ${msg.leadDetails!.phone || "N/A"}\nCompany: ${msg.leadDetails!.company || "N/A"}\n\nProject Requirements:\n${msg.leadDetails!.project_description}\n\nSent via MAD-K AI Assistant.`
-                                  );
-                                  window.location.href = `mailto:kamatchi825@gmail.com?subject=${subject}&body=${body}`;
-                                }}
-                                className="flex-1 py-2 px-3 bg-primary text-on-primary font-bold text-xs rounded hover:brightness-110 active:scale-95 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                              >
-                                <Mail size={12} /> Email Lead to Owner
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const waText = encodeURIComponent(
-                                    `Hello MAD-K! A new lead has been captured:\n\nName: ${msg.leadDetails!.name}\nEmail: ${msg.leadDetails!.email}\nProject: ${msg.leadDetails!.project_description}`
-                                  );
-                                  window.open(`https://api.whatsapp.com/send?phone=${PORTFOLIO_WHATSAPP_NUMBER}&text=${waText}`, '_blank');
-                                }}
-                                className="flex-1 py-2 px-3 glass border-white/10 hover:border-primary/50 text-white font-bold text-xs rounded active:scale-95 transition-all text-center cursor-pointer flex items-center justify-center gap-1"
-                              >
-                                <MessageCircle size={12} className="text-primary" /> Send via WhatsApp
-                              </button>
                             </div>
                           </div>
                         )}
@@ -1232,7 +1194,7 @@ export default function App() {
 
               {/* Modal Footer / Guidance */}
               <div className="bg-[#2a2a2a]/40 px-6 py-4 border-t border-white/5 text-[11px] text-on-surface-variant/50 font-label-mono leading-relaxed">
-                * Note: Selecting any channel will also post this enquiry to our terminal chat assistant so you can preview custom estimates here instantly.
+                * Your selected channel will open directly so you can send the enquiry from your own account.
               </div>
             </motion.div>
           </div>
