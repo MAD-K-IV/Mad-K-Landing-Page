@@ -172,6 +172,5 @@ app.post("/api/chat", async (req, res) => {
 
 // Export the Express app as a Firebase Cloud Function HTTPS trigger
 export const api = onRequest({
-  cors: true,
-  secrets: ["GEMINI_API_KEY"]
+  cors: true
 }, app);

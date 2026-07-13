@@ -95,7 +95,7 @@ app.post("/api/chat", async (req, res) => {
       apiKey,
       httpOptions: {
         headers: {
-          "User-Agent": "aistudio-build"
+          "User-Agent": "mad-k"
         }
       }
     });
@@ -184,8 +184,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 var api = (0, import_https.onRequest)({
-  cors: true,
-  secrets: ["GEMINI_API_KEY"]
+  cors: true
 }, app);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
