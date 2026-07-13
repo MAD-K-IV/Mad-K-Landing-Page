@@ -18,6 +18,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import ThreeDLogo from "./components/ThreeDLogo";
 
 
 // YOUR PORTFOLIO WHATSAPP NUMBER (with country code, no + or spaces)
@@ -189,28 +190,6 @@ export default function App() {
 
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
-
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
-
-      const rotY = -(dx / cx) * 50; // max 35 degrees Y rotation
-      const rotX = (dy / cy) * 50;  // max 35 degrees X rotation
-
-      const container = document.getElementById("background-water-container");
-      if (container) {
-        container.style.setProperty("--rot-x", `${rotX}deg`);
-        container.style.setProperty("--rot-y", `${rotY}deg`);
-      }
-    };
-
-    const handleMouseLeave = () => {
-      const container = document.getElementById("background-water-container");
-      if (container) {
-        container.style.setProperty("--rot-x", "0deg");
-        container.style.setProperty("--rot-y", "0deg");
-      }
     };
 
     const handleMouseOver = (e: MouseEvent) => {
@@ -231,12 +210,10 @@ export default function App() {
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseover', handleMouseOver);
-    document.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseover', handleMouseOver);
-      document.removeEventListener('mouseleave', handleMouseLeave);
       document.documentElement.classList.remove('custom-cursor-enabled');
     };
   }, []);
@@ -397,14 +374,7 @@ export default function App() {
 
       {/* Dissolved Water Logo Background */}
       <div id="background-water-container" className="background-water-container">
-        <div className="background-water-float-wrapper">
-          <img 
-            src="/logo.png" 
-            className="background-water-logo" 
-            alt="MAD-K Background Logo" 
-            referrerPolicy="no-referrer"
-          />
-        </div>
+        <ThreeDLogo />
       </div>
 
 

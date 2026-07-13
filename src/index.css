@@ -258,48 +258,10 @@
 .background-water-container {
   position: fixed;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  opacity: 0.32;
-  perspective: 600px;
-}
-
-.background-water-float-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: water-float 24s ease-in-out infinite alternate;
-}
-
-.background-water-logo {
-  width: 48vw;
-  max-width: 480px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0 35px #FC3E75) 
-          drop-shadow(0 0 70px #9138cc)
-          drop-shadow(0 0 100px #4538f8)
-          blur(2px);
-  transform: rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg)) translateZ(0);
-  transform-style: preserve-3d;
-  will-change: transform;
-  transition: transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1);
-}
-
-@keyframes water-float {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-  }
-  50% {
-    transform: translate(2%, 4%) scale(1.04) rotate(1.5deg);
-  }
-  100% {
-    transform: translate(-1.5%, -3%) scale(0.96) rotate(-1.5deg);
-  }
+  opacity: 0.35;
 }
 
 
