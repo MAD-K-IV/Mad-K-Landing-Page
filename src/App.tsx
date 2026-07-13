@@ -23,6 +23,52 @@ import { motion, AnimatePresence } from "motion/react";
 // YOUR PORTFOLIO WHATSAPP NUMBER (with country code, no + or spaces)
 const PORTFOLIO_WHATSAPP_NUMBER = "919655841515"; 
 
+function getClientMetadata() {
+  const userAgent = navigator.userAgent;
+  const screenResolution = `${window.screen.width}x${window.screen.height}`;
+  const language = navigator.language;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const referrer = document.referrer || "Direct";
+  
+  // Simple Canvas Fingerprint / Digital Signature
+  let canvasFingerprint = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      canvas.width = 200;
+      canvas.height = 50;
+      ctx.textBaseline = "top";
+      ctx.font = "14px 'Arial'";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#f60";
+      ctx.fillRect(125,1,62,20);
+      ctx.fillStyle = "#069";
+      ctx.fillText("MAD-K Fingerprint, alpha 123", 2, 15);
+      ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+      ctx.fillText("MAD-K Fingerprint, alpha 123", 4, 17);
+      const str = canvas.toDataURL();
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      canvasFingerprint = Math.abs(hash).toString(16);
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return {
+    userAgent,
+    screenResolution,
+    language,
+    timezone,
+    referrer,
+    canvasFingerprint
+  };
+}
+
 // Reusable scroll-triggered reveal animation wrapper
 
 function ScrollReveal({
@@ -281,7 +327,10 @@ export default function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ messages: updatedMessages })
+        body: JSON.stringify({ 
+          messages: updatedMessages,
+          clientMetadata: getClientMetadata()
+        })
       });
 
       if (!response.ok) {

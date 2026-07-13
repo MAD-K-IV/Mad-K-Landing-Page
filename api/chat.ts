@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import nodemailer from "nodemailer";
 
 // Helper to auto-email lead details to MAD-K via Nodemailer
-async function sendLeadEmail(lead: any) {
+async function sendLeadEmail(lead: any, metadata: any = {}) {
   const smtpEmail = process.env.SMTP_EMAIL;
   const smtpPassword = process.env.SMTP_PASSWORD;
 
@@ -21,36 +21,52 @@ async function sendLeadEmail(lead: any) {
       },
     });
 
+    const leadName = lead.name || "Anonymous Visitor";
+
     await transporter.sendMail({
       from: `"MAD-K Lead Bot" <${smtpEmail}>`,
       to: "madkinfo@gmail.com",
-      subject: `🔥 New Lead Captured: ${lead.name}`,
+      subject: `🔥 New Lead / Requirement: ${leadName}`,
       html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
           <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px 32px;">
-            <h1 style="margin: 0; font-size: 22px; color: #ffffff;">🚀 New Lead Captured</h1>
+            <h1 style="margin: 0; font-size: 22px; color: #ffffff;">🚀 New Lead / Requirements</h1>
             <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">Via MAD-K AI Assistant</p>
           </div>
           <div style="padding: 24px 32px;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600; width: 120px;">Name</td><td style="padding: 8px 0;">${lead.name}</td></tr>
-              <tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Email</td><td style="padding: 8px 0;"><a href="mailto:${lead.email}" style="color: #60a5fa;">${lead.email}</a></td></tr>
-              ${lead.phone ? `<tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Phone</td><td style="padding: 8px 0;">${lead.phone}</td></tr>` : ''}
-              ${lead.company ? `<tr><td style="padding: 8px 0; color: #a78bfa; font-weight: 600;">Company</td><td style="padding: 8px 0;">${lead.company}</td></tr>` : ''}
+            <h3 style="margin-top: 0; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); pb: 8px;">Contact / Enquiry Details</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600; width: 120px;">Name</td><td style="padding: 6px 0; color: #ffffff;">${lead.name || '<span style="color:#666; font-style:italic;">Not Provided</span>'}</td></tr>
+              <tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600;">Email</td><td style="padding: 6px 0;">${lead.email ? `<a href="mailto:${lead.email}" style="color: #60a5fa;">${lead.email}</a>` : '<span style="color:#666; font-style:italic;">Not Provided</span>'}</td></tr>
+              ${lead.phone ? `<tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600;">Phone</td><td style="padding: 6px 0; color: #ffffff;">${lead.phone}</td></tr>` : ''}
+              ${lead.company ? `<tr><td style="padding: 6px 0; color: #a78bfa; font-weight: 600;">Company</td><td style="padding: 6px 0; color: #ffffff;">${lead.company}</td></tr>` : ''}
             </table>
-            <div style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #a78bfa;">
-              <p style="margin: 0 0 6px; font-size: 12px; color: #a78bfa; font-weight: 600; text-transform: uppercase;">Project Description</p>
-              <p style="margin: 0; line-height: 1.6;">${lead.project_description}</p>
+            
+            <div style="margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid #a78bfa;">
+              <p style="margin: 0 0 6px; font-size: 12px; color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Project Requirements</p>
+              <p style="margin: 0; line-height: 1.6; color: #ffffff; font-size: 14px;">${lead.project_description}</p>
             </div>
+
+            <h3 style="color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); pb: 8px; margin-top: 24px;">Visitor Metadata & Diagnostics</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5;">
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600; width: 140px;">IP Address</td><td style="padding: 5px 0; font-family: monospace;">${metadata.ip || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Approx. Location</td><td style="padding: 5px 0;">${metadata.location || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Browser User Agent</td><td style="padding: 5px 0; word-break: break-all;">${metadata.browser || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Screen Resolution</td><td style="padding: 5px 0;">${metadata.resolution || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Timezone</td><td style="padding: 5px 0;">${metadata.timezone || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Language</td><td style="padding: 5px 0;">${metadata.language || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Referrer</td><td style="padding: 5px 0;">${metadata.referrer || 'Unknown'}</td></tr>
+              <tr><td style="padding: 5px 0; color: #a78bfa; font-weight: 600;">Digital Signature Hash</td><td style="padding: 5px 0; font-family: monospace; color: #f472b6; font-weight: bold;">${metadata.signature || 'Unknown'}</td></tr>
+            </table>
           </div>
-          <div style="padding: 16px 32px; background: rgba(0,0,0,0.3); font-size: 11px; color: #666;">
-            Captured at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST • MAD-K Portfolio
+          <div style="padding: 16px 32px; background: rgba(0,0,0,0.3); font-size: 11px; color: #666; text-align: center;">
+            Captured at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST • MAD-K Portfolio System
           </div>
         </div>
       `,
     });
 
-    console.log(`✅ Lead email sent successfully for: ${lead.name} (${lead.email})`);
+    console.log(`✅ Lead email sent successfully for: ${leadName}`);
   } catch (error: any) {
     console.error("❌ Failed to send lead email:", error.message);
   }
@@ -86,8 +102,7 @@ Guidelines for Your Tone & Style:
 - Do not make up any facts or details about MAD-K not listed above. If you don't know, suggest they contact MAD-K directly.
 - Note that you can help estimate project budgets! For example, if they describe what they want to build, give a high-level technical recommendation and tell them which tier (or custom pricing) fits best.
 - Lead Capture Protocol:
-  Whenever a user expresses interest in booking a tier, raising an enquiry, or collaborating with MAD-K, make sure to ask for their name, email (mandatory), and a description of their requirements.
-  Once they share these details, you MUST immediately invoke the 'submit_lead' function to register and forward their lead to madkinfo@gmail.com. Warn them nicely that you are saving and sending their lead details to MAD-K.`;
+  Whenever a user expresses interest in booking a tier, raising an enquiry, collaborating with MAD-K, OR simply describes their project requirements, you MUST immediately invoke the 'submit_lead' function. Do NOT wait for contact details (like name/email) to register the lead — register it as soon as their project requirements are clear! If they do offer contact details, capture them too. Warn them nicely that you are registering their enquiry details.`;
 
 const app = express();
 app.use(express.json());
@@ -95,7 +110,7 @@ app.use(express.json());
 // API endpoint for chatbot
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, clientMetadata } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Invalid messages payload" });
     }
@@ -116,19 +131,39 @@ app.post("/api/chat", async (req, res) => {
       }
     });
 
+    // Collect geolocation and network details from incoming request headers
+    const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || "Unknown";
+    const clientIp = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : "Unknown";
+    
+    const country = req.headers['x-vercel-ip-country'] || "Unknown";
+    const region = req.headers['x-vercel-ip-country-region'] || "Unknown";
+    const city = req.headers['x-vercel-ip-city'] || "Unknown";
+    const location = country !== "Unknown" ? `${city}, ${region}, ${country}` : "Local/Unknown";
+
+    const metadataPayload = {
+      ip: clientIp,
+      location: location,
+      browser: clientMetadata?.userAgent || req.headers['user-agent'] || "Unknown",
+      resolution: clientMetadata?.screenResolution || "Unknown",
+      timezone: clientMetadata?.timezone || "Unknown",
+      language: clientMetadata?.language || "Unknown",
+      referrer: clientMetadata?.referrer || "Unknown",
+      signature: clientMetadata?.canvasFingerprint || "Unknown"
+    };
+
     const submitLeadFunctionDeclaration = {
       name: "submit_lead",
-      description: "Call this function when the user provides their contact details (such as email or phone number) and explains what they want to build, or explicitly asks to submit an enquiry/lead. This function captures their name, email, phone, company, and project description.",
+      description: "Call this function when the user describes their project requirements or provides contact details. This registers the lead details and requirements.",
       parameters: {
         type: Type.OBJECT,
         properties: {
           name: {
             type: Type.STRING,
-            description: "The name of the lead/user."
+            description: "The name of the lead/user (optional)."
           },
           email: {
             type: Type.STRING,
-            description: "The email address of the lead/user."
+            description: "The email address of the lead/user (optional)."
           },
           phone: {
             type: Type.STRING,
@@ -143,7 +178,7 @@ app.post("/api/chat", async (req, res) => {
             description: "A summary of the project requirements, services needed, or what the user wants to build."
           }
         },
-        required: ["name", "email", "project_description"]
+        required: ["project_description"]
       }
     };
 
@@ -176,8 +211,8 @@ app.post("/api/chat", async (req, res) => {
         leadCaptured = true;
         leadDetails = args;
         
-        // Auto-email lead details to MAD-K
-        await sendLeadEmail(args);
+        // Auto-email lead details to MAD-K along with diagnostic metadata
+        await sendLeadEmail(args, metadataPayload);
 
         const previousContent = response.candidates?.[0]?.content;
         const functionResponsePart = {
