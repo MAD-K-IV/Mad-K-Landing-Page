@@ -55,7 +55,8 @@ async function sendLeadEmail(lead: any, metadata: any = {}, convoHistory: any[] 
     }
 
     await transporter.sendMail({
-      from: `"MAD-K Lead Bot" <${smtpEmail}>`,
+      from: `"MAD-K Lead Bot" <madkinfo@gmail.com>`,
+      replyTo: "madkinfo@gmail.com",
       to: "madkinfo@gmail.com",
       subject: `🔥 New Lead / Requirement: ${leadName}`,
       html: `
@@ -315,6 +316,52 @@ async function startServer() {
         referrer: clientMetadata?.referrer || "Unknown",
         signature: clientMetadata?.canvasFingerprint || "Unknown"
       };
+
+      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
+      
+      // Deterministically capture lead if user submits formatted contact details from popup
+      const latestMessageObj = messages[messages.length - 1];
+      const latestText = latestMessageObj?.text || "";
+      if (latestMessageObj?.sender === 'user' && latestText.includes('|')) {
+        const split = latestText.split('|').map(p => p.trim());
+        if (split.length >= 2) {
+          const name = split[0];
+          const phone = split.length >= 3 ? split[1] : "";
+          const email = split.length >= 3 ? split[2] : split[1];
+          
+          if (emailRegex.test(email)) {
+            // Scan history for project description
+            const descParts: string[] = [];
+            for (const m of messages) {
+              const text = m.text || "";
+              const cleaned = text.trim();
+              if (cleaned.includes('|') || cleaned.length < 8 || m.sender !== 'user') {
+                continue;
+              }
+              descParts.push(cleaned);
+            }
+            let project_description = descParts.join(" ");
+            if (!project_description && messages.length > 0) {
+              const nonSplit = messages.filter(m => m.sender === 'user' && !(m.text || "").includes('|'));
+              if (nonSplit.length > 0) {
+                project_description = nonSplit[nonSplit.length - 1].text || "";
+              }
+            }
+            if (!project_description) {
+              project_description = "Interested in MAD-K services";
+            }
+            
+            const leadDetails = { name, email, phone, project_description };
+            await sendLeadEmail(leadDetails, metadataPayload, messages);
+            
+            return res.json({
+              text: `Thank you! Your requirements have been successfully registered and emailed to the MAD-K team. We will reach out to you at **${email}** (Phone: ${phone || 'Not Provided'}) soon! 🚀`,
+              leadCaptured: true,
+              leadDetails
+            });
+          }
+        }
+      }
 
       if (!ai) {
         console.warn("Gemini client not initialized. Falling back to static mode.");
