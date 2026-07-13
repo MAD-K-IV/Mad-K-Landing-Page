@@ -126,28 +126,61 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
   let name = "";
 
   const userMessages = messages.filter(m => m.sender === 'user');
+
+  // Try delimiter-based splitting first on any user message
+  const delimiters = [/\|/, /--/, /\/\//, /,/];
   
   for (const m of userMessages) {
     const text = m.text || "";
-    
-    // Check for email
-    const emailMatch = text.match(emailRegex);
-    if (emailMatch) {
-      email = emailMatch[0];
+    for (const delim of delimiters) {
+      const split = text.split(delim);
+      if (split.length >= 2) {
+        const parts = split.map(p => p.trim());
+        let tempName = "";
+        let tempPhone = "";
+        let tempEmail = "";
+        
+        for (const part of parts) {
+          if (emailRegex.test(part)) {
+            const match = part.match(emailRegex);
+            if (match) tempEmail = match[0];
+          } else if (phoneRegex.test(part)) {
+            const match = part.match(phoneRegex);
+            if (match) tempPhone = match[0];
+          } else {
+            if (part && part.length < 40 && !tempName) {
+              tempName = part;
+            }
+          }
+        }
+        
+        if (tempEmail) {
+          email = tempEmail;
+          if (tempName) name = tempName;
+          if (tempPhone) phone = tempPhone;
+          break;
+        }
+      }
     }
-    
-    // Check for phone
-    const phoneMatch = text.match(phoneRegex);
-    if (phoneMatch) {
-      phone = phoneMatch[0];
-    }
+    if (email) break;
+  }
 
-    // Try to extract name
-    const nameMatch = text.match(/my name is\s+([A-Za-z\s]{2,30})/i) || 
-                      text.match(/i am\s+([A-Za-z\s]{2,30})/i) ||
-                      text.match(/name:\s*([A-Za-z\s]{2,30})/i);
-    if (nameMatch) {
-      name = nameMatch[1].trim();
+  // If no structured match found, fallback to regex scanning across all messages
+  if (!email) {
+    for (const m of userMessages) {
+      const text = m.text || "";
+      const emailMatch = text.match(emailRegex);
+      if (emailMatch) email = emailMatch[0];
+
+      const phoneMatch = text.match(phoneRegex);
+      if (phoneMatch) phone = phoneMatch[0];
+
+      const nameMatch = text.match(/my name is\s+([A-Za-z\s]{2,30})/i) || 
+                        text.match(/i am\s+([A-Za-z\s]{2,30})/i) ||
+                        text.match(/name:\s*([A-Za-z\s]{2,30})/i);
+      if (nameMatch) {
+        name = nameMatch[1].trim();
+      }
     }
   }
 
@@ -156,15 +189,24 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
     name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
   }
 
-  // To find the project description:
+  // Extract project description (ignoring split messages containing emails)
   const descParts: string[] = [];
   for (const m of userMessages) {
     const text = m.text || "";
     const cleaned = text.trim();
     
+    let isSplitMsg = false;
+    for (const delim of delimiters) {
+      if (cleaned.split(delim).length >= 2 && emailRegex.test(cleaned)) {
+        isSplitMsg = true;
+        break;
+      }
+    }
+    
     if (cleaned.toLowerCase().startsWith("my name is") || 
         cleaned.toLowerCase().startsWith("i am") || 
         emailRegex.test(cleaned) ||
+        isSplitMsg ||
         cleaned.length < 8) {
       continue;
     }
@@ -175,7 +217,22 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
   let project_description = descParts.join(" ");
 
   if (!project_description && userMessages.length > 0) {
-    project_description = userMessages[userMessages.length - 1].text || "";
+    const nonSplitMsgs = userMessages.filter(m => {
+      const text = m.text || "";
+      let isSplit = false;
+      for (const delim of delimiters) {
+        if (text.split(delim).length >= 2 && emailRegex.test(text)) {
+          isSplit = true;
+          break;
+        }
+      }
+      return !isSplit;
+    });
+    if (nonSplitMsgs.length > 0) {
+      project_description = nonSplitMsgs[nonSplitMsgs.length - 1].text || "";
+    } else {
+      project_description = userMessages[0].text || "";
+    }
   }
 
   const latestMessage = userMessages[userMessages.length - 1]?.text || "";
@@ -187,7 +244,7 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
     const leadDetails = { name, email, phone, project_description };
     await sendLeadEmail(leadDetails, metadataPayload);
     return {
-      text: `Thank you! Your requirements have been successfully registered and emailed to the MAD-K team. We will reach out to you at **${email}** soon! 🚀`,
+      text: `Thank you! Your requirements have been successfully registered and emailed to the MAD-K team. We will reach out to you at **${email}** (Phone: ${phone || 'Not Provided'}) soon! 🚀`,
       leadCaptured: true,
       leadDetails
     };
@@ -196,7 +253,17 @@ async function runStaticFallback(messages: any[], metadataPayload: any) {
   // If we have requirements, but no email:
   if (project_description && project_description.length > 15) {
     return {
-      text: "Got it! I've noted down your project requirements. To submit this enquiry directly to the MAD-K team, please provide your **Name** and **Email Address**.",
+      text: `Got it! I've noted down your project requirements.
+      
+To submit this enquiry directly to the MAD-K team, please provide your **Name**, **Mobile Number**, and **Email Address**. 
+
+You can type them in any of these templates:
+*   \`Name | Mobile | Email\`
+*   \`Name, Mobile, Email\`
+*   \`Name -- Mobile -- Email\`
+*   \`Name // Mobile // Email\`
+
+*For example: Somesh | 9655841515 | kamatchi187@gmail.com*`,
       leadCaptured: false,
       leadDetails: null
     };
