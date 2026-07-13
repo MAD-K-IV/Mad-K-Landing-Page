@@ -48,7 +48,7 @@ async function sendLeadEmail(lead: any, metadata: any = {}, convoHistory: any[] 
       to: "madkinfo@gmail.com",
       subject: `🔥 New Lead / Requirement: ${leadName}`,
       html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
           <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px 32px;">
             <h1 style="margin: 0; font-size: 22px; color: #ffffff;">🚀 New Lead / Requirements</h1>
             <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">Via MAD-K AI Assistant</p>
@@ -202,7 +202,7 @@ To submit this enquiry directly to the MAD-K team, please provide your **Name**,
 
 **Name | Mobile | Email**
 
-*For example: Somesh | 9655841515 | kamatchi187@gmail.com*`,
+*For example: Madk | 9655841515 | madkinfo@gmail.com*`,
       leadCaptured: false,
       leadDetails: null
     };

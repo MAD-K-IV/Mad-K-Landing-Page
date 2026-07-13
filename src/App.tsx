@@ -1360,7 +1360,7 @@ export default function App() {
                       type="text"
                       value={leadName}
                       onChange={(e) => setLeadName(e.target.value)}
-                      placeholder="Somesh"
+                      placeholder="Madk"
                       className="w-full bg-black/40 pl-9 pr-3 py-2 rounded-lg border border-white/10 font-sans text-sm text-white placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 transition-colors"
                     />
                   </div>
@@ -1394,7 +1394,7 @@ export default function App() {
                       type="email"
                       value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
-                      placeholder="kamatchi187@gmail.com"
+                      placeholder="madkinfo@gmail.com"
                       className="w-full bg-black/40 pl-9 pr-3 py-2 rounded-lg border border-white/10 font-sans text-sm text-white placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 transition-colors"
                     />
                   </div>
