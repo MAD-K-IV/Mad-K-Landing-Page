@@ -3,15 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist-functions/index.js",
   "scripts": {
     "dev": "tsx server.ts",
     "build:frontend": "vite build",
     "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "build:functions": "esbuild src/functions/index.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist-functions/index.js",
-    "build": "npm run build:frontend && npm run build:server && npm run build:functions",
+    "build": "npm run build:frontend && npm run build:server",
     "start": "node dist/server.cjs",
-    "clean": "rm -rf dist dist-functions server.js",
+    "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
