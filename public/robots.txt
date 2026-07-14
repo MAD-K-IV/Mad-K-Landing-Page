@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mad-k.vercel.app/sitemap.xml

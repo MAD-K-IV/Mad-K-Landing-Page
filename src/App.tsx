@@ -224,6 +224,13 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as any });
+    if (view === 'home') {
+      document.title = "MAD-K | AI Chatbots, Custom RAG & Task Automation Specialization";
+    } else if (view === 'privacy') {
+      document.title = "Privacy Policy | MAD-K";
+    } else if (view === 'terms') {
+      document.title = "Terms of Service | MAD-K";
+    }
   }, [view]);
 
 
