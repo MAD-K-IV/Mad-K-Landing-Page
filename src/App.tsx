@@ -220,6 +220,12 @@ export default function App() {
   const [leadEmail, setLeadEmail] = useState("");
   const [leadError, setLeadError] = useState("");
 
+  const [view, setView] = useState<'home' | 'privacy' | 'terms'>('home');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as any });
+  }, [view]);
+
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -466,14 +472,17 @@ export default function App() {
   };
 
   const handleQuickCTA = () => {
-    const chatElement = document.getElementById("chat");
-    if (chatElement) {
-      chatElement.scrollIntoView({ behavior: "smooth" });
-    }
-    setInputValue("Hello! I want to estimate a project budget with you.");
+    setView('home');
     setTimeout(() => {
-      chatInputRef.current?.focus();
-    }, 800);
+      const chatElement = document.getElementById("chat");
+      if (chatElement) {
+        chatElement.scrollIntoView({ behavior: "smooth" });
+      }
+      setInputValue("Hello! I want to estimate a project budget with you.");
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 800);
+    }, 100);
   };
 
   return (
@@ -507,16 +516,41 @@ export default function App() {
         {/* Navigation */}
       <nav id="navbar" className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
         <div className="flex justify-between items-center h-20 px-6 md:px-12 max-w-7xl mx-auto">
-          <a href="#" id="nav-logo" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
+          <button 
+            id="nav-logo" 
+            onClick={() => setView('home')} 
+            className="flex items-center gap-4 hover:opacity-90 transition-opacity cursor-pointer bg-transparent border-none p-0 focus:outline-none"
+          >
             <img src="/logo.png" alt="MAD-K Logo" className="w-14 h-14 object-contain" referrerPolicy="no-referrer" />
             <img src="/brand.png" alt="MAD-K" className="h-9 object-contain" referrerPolicy="no-referrer" />
-          </a>
+          </button>
           
           {/* Desktop Nav links */}
           <div id="desktop-nav" className="hidden md:flex gap-8 items-center">
-            <a id="link-services" className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" href="#services">Services</a>
-            <a id="link-projects" className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" href="#projects">Projects</a>
-            <a id="link-pricing" className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" href="#pricing">Pricing</a>
+            <a 
+              id="link-services" 
+              onClick={() => setView('home')} 
+              className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" 
+              href="#services"
+            >
+              Services
+            </a>
+            <a 
+              id="link-projects" 
+              onClick={() => setView('home')} 
+              className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" 
+              href="#projects"
+            >
+              Projects
+            </a>
+            <a 
+              id="link-pricing" 
+              onClick={() => setView('home')} 
+              className="font-display text-sm text-on-surface-variant hover:text-primary transition-colors" 
+              href="#pricing"
+            >
+              Pricing
+            </a>
             <button 
               id="btn-get-started" 
               onClick={handleQuickCTA}
@@ -550,7 +584,10 @@ export default function App() {
                 id="mob-link-services" 
                 className="font-display text-lg py-2 text-on-surface-variant hover:text-primary transition-colors" 
                 href="#services"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setView('home');
+                  setMobileMenuOpen(false);
+                }}
               >
                 Services
               </a>
@@ -558,7 +595,10 @@ export default function App() {
                 id="mob-link-projects" 
                 className="font-display text-lg py-2 text-on-surface-variant hover:text-primary transition-colors" 
                 href="#projects"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setView('home');
+                  setMobileMenuOpen(false);
+                }}
               >
                 Projects
               </a>
@@ -566,7 +606,10 @@ export default function App() {
                 id="mob-link-pricing" 
                 className="font-display text-lg py-2 text-on-surface-variant hover:text-primary transition-colors" 
                 href="#pricing"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setView('home');
+                  setMobileMenuOpen(false);
+                }}
               >
                 Pricing
               </a>
@@ -586,7 +629,8 @@ export default function App() {
       </nav>
 
       {/* Main Content Area */}
-      <main className="relative z-10 pt-20">
+      {view === 'home' ? (
+        <main className="relative z-10 pt-20">
         
         {/* Hero Section */}
         <section id="hero" className="relative min-h-[80vh] flex flex-col justify-center items-center text-center px-6 md:px-12 py-20 max-w-5xl mx-auto">
@@ -1157,7 +1201,12 @@ export default function App() {
           </ScrollReveal>
         </section>
 
-      </main>
+        </main>
+      ) : view === 'privacy' ? (
+        <PrivacyPolicyView setView={setView} />
+      ) : (
+        <TermsConditionsView setView={setView} />
+      )}
 
       {/* Footer */}
       <footer id="footer" className="bg-surface-container-lowest border-t border-white/5 w-full py-12">
@@ -1194,7 +1243,20 @@ export default function App() {
               >
                 GitHub
               </a>
-              <a href="#" className="font-label-mono text-xs text-on-surface-variant/70 hover:text-secondary transition-colors">Privacy Policy</a>
+              <button 
+                id="btn-footer-privacy"
+                onClick={() => setView('privacy')} 
+                className="font-label-mono text-xs text-on-surface-variant/70 hover:text-secondary transition-colors cursor-pointer bg-transparent border-none p-0 focus:outline-none"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                id="btn-footer-terms"
+                onClick={() => setView('terms')} 
+                className="font-label-mono text-xs text-on-surface-variant/70 hover:text-secondary transition-colors cursor-pointer bg-transparent border-none p-0 focus:outline-none"
+              >
+                Terms of Service
+              </button>
             </div>
             <p className="font-label-mono text-[10px] text-on-surface-variant/40 text-center md:text-right">
               © 2026 MAD-K. Built for the high-fidelity web. Standard analytics used for performance.
@@ -1480,5 +1542,186 @@ export default function App() {
       )}
 
     </div>
+  );
+}
+
+interface ViewProps {
+  setView: (view: 'home' | 'privacy' | 'terms') => void;
+}
+
+function PrivacyPolicyView({ setView }: ViewProps) {
+  return (
+    <main className="relative z-10 pt-32 px-6 md:px-12 max-w-4xl mx-auto pb-24">
+      <button 
+        onClick={() => setView('home')}
+        className="font-label-mono text-xs text-primary hover:text-primary/80 mb-8 cursor-pointer flex items-center gap-2 focus:outline-none bg-transparent border-none p-0"
+      >
+        <span>&lt;</span> BACK_TO_HOME
+      </button>
+      
+      <div className="glass p-8 md:p-12 rounded-2xl border-white/5 space-y-8">
+        <div>
+          <span className="font-label-mono text-xs text-secondary tracking-widest block mb-2 uppercase">
+            DOCUMENT_REF: PRIVACY_POLICY_V1.0
+          </span>
+          <h1 className="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">
+            Privacy Policy
+          </h1>
+          <p className="font-label-mono text-xs text-on-surface-variant/50 mt-2">
+            Last Updated: July 2026
+          </p>
+        </div>
+
+        <hr className="border-white/10" />
+
+        <div className="space-y-6 font-sans text-sm text-on-surface-variant leading-relaxed">
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[01]</span> Scope & Data Collection
+            </h2>
+            <p>
+              MAD-K is committed to respecting user privacy. We collect two types of data on our platform:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-white/90">
+              <li>
+                <strong>Directly Provided Data:</strong> Contact information (Name, Mobile, and Email) voluntarily submitted when you choose to register an enquiry or provide contact details to the chatbot.
+              </li>
+              <li>
+                <strong>Automatically Collected Geolocation &amp; System Metadata:</strong> IP address, approximate geographical location (country, region, city), browser user agent, screen resolution, timezone, browser language, referrer document, and canvas fingerprint digital signature.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[02]</span> Purpose of Processing
+            </h2>
+            <p>
+              Your contact details are processed to register project requests, answer enquiries, and send Nodemailer notifications to the MAD-K dev team. 
+            </p>
+            <p>
+              The automatically collected system and geolocation metadata are utilized exclusively to secure the chatbot service, enforce character limit guardrails to prevent token-exhausting API abuse, and generate spam diagnostics.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[03]</span> Database &amp; Retention Policy
+            </h2>
+            <p>
+              MAD-K does <strong>not</strong> persist chat transcripts or personal details in a permanent queryable database. Once your requirements and contact info are captured, they are formatted and forwarded instantly to <a href="mailto:madkinfo@gmail.com" className="text-secondary hover:underline">madkinfo@gmail.com</a> via Nodemailer SMTP. Chat history is cleared upon reloading or closing your browser session.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[04]</span> Data Security &amp; Sharing
+            </h2>
+            <p>
+              We implement industry-standard encryption protocols to protect all transmission payloads. We do not sell, trade, or share your personal data with third parties.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[05]</span> Contact Us
+            </h2>
+            <p>
+              If you have any questions or would like to request deletion of any forwarded logs, please contact us directly at <a href="mailto:madkinfo@gmail.com" className="text-primary hover:underline">madkinfo@gmail.com</a>.
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function TermsConditionsView({ setView }: ViewProps) {
+  return (
+    <main className="relative z-10 pt-32 px-6 md:px-12 max-w-4xl mx-auto pb-24">
+      <button 
+        onClick={() => setView('home')}
+        className="font-label-mono text-xs text-primary hover:text-primary/80 mb-8 cursor-pointer flex items-center gap-2 focus:outline-none bg-transparent border-none p-0"
+      >
+        <span>&lt;</span> BACK_TO_HOME
+      </button>
+      
+      <div className="glass p-8 md:p-12 rounded-2xl border-white/5 space-y-8">
+        <div>
+          <span className="font-label-mono text-xs text-secondary tracking-widest block mb-2 uppercase">
+            DOCUMENT_REF: TERMS_CONDITIONS_V1.0
+          </span>
+          <h1 className="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">
+            Terms of Service
+          </h1>
+          <p className="font-label-mono text-xs text-on-surface-variant/50 mt-2">
+            Last Updated: July 2026
+          </p>
+        </div>
+
+        <hr className="border-white/10" />
+
+        <div className="space-y-6 font-sans text-sm text-on-surface-variant leading-relaxed">
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[01]</span> Agreement to Terms
+            </h2>
+            <p>
+              By accessing and using the MAD-K platform, you agree to follow and be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[02]</span> Intellectual Property
+            </h2>
+            <p>
+              All branding elements, designs, text, and custom AI chatbot interfaces on this site are the intellectual property of MAD-K. Open-source elements are governed by their respective repositories and licenses.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[03]</span> Acceptable Use &amp; API Guardrails
+            </h2>
+            <p>
+              To protect our server resources, we enforce strict usage guardrails on our chat assistant:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-white/90">
+              <li>
+                You may not send messages exceeding <strong>800 characters</strong> via the client input.
+              </li>
+              <li>
+                Bypassing frontend limits or spamming the server with excessive paragraphs is strictly prohibited.
+              </li>
+              <li>
+                Any automated scripting, scraping, or attempt to inject prompts designed to exploit API tokens is a violation of these terms.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[04]</span> Service Estimates &amp; Disclaimers
+            </h2>
+            <p>
+              TIMELINE AND BUDGET ESTIMATES PROVIDED BY THE AI CHATBOT ARE AUTOMATED HIGH-LEVEL PROPOSALS AND NOT BINDING CONTRACTS. Final project scope and cost terms are established solely via signed statements of work.
+            </p>
+            <p>
+              The AI assistant is provided "as is" with fallback mechanisms in place for api downtime. MAD-K does not guarantee uninterrupted or error-free chat operations.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+              <span className="font-label-mono text-xs text-primary">[05]</span> Governing Law
+            </h2>
+            <p>
+              These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which MAD-K operates, without giving effect to conflicts of laws principles.
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }
