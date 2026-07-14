@@ -445,11 +445,12 @@ export default function App() {
         `Hello MAD-K,\n\nI would like to raise an enquiry for the "${tierName}" service tier (${price}).\n\nRequirements:\n${requirementsText}\n\nLooking forward to your response!\n`
       );
       const mailtoLink = `mailto:${emailRecipient}?subject=${emailSubject}&body=${emailBody}`;
-      const mailWindow = window.open(mailtoLink, '_blank');
-      // Fallback: if popup was blocked, try location.href
-      if (!mailWindow) {
-        window.location.href = mailtoLink;
-      }
+      // Use temporary anchor tag to prevent opening blank browser tabs
+      const link = document.createElement('a');
+      link.href = mailtoLink;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } else if (channel === 'whatsapp') {
       const waText = encodeURIComponent(
         `Hello MAD-K! I am interested in the "${tierName}" tier (${price}).\n\nRequirements:\n${requirementsText}`
@@ -460,7 +461,7 @@ export default function App() {
       navigator.clipboard.writeText(linkedInText);
       setCopiedNotification(true);
       setTimeout(() => setCopiedNotification(false), 4000);
-      window.open("https://linkedin.com/in/somesh-s-dev", '_blank');
+      window.open("https://linkedin.com/in/kamatchi-somesh", '_blank');
     }
   };
 

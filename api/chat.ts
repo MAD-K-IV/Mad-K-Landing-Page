@@ -257,7 +257,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     // Guardrail against excessive token usage (e.g. massive paragraphs)
-    const hasTooLongMessage = messages.some(msg => msg.text && msg.text.length > 1000);
+    const hasTooLongMessage = messages.some(msg => msg.sender === 'user' && msg.text && msg.text.length > 1000);
     if (hasTooLongMessage) {
       return res.json({
         text: "⚠️ Your message exceeds our security guardrail limit of 1000 characters. Please shorten your response and try again."
